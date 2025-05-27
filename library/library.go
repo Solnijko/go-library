@@ -3,29 +3,33 @@ package library
 import "fmt"
 
 type Book struct {
-	id                 int
-	title, description string
-	isRead             bool
+	Id                 int
+	Title, Description string
+	IsRead, IsBorrowed bool
 }
 
-var Books []*Book
-var BookId = 0
+var Books = make(map[int]*Book)
+var BooksByTitle = make(map[string]*Book)
+var NewBookId = 0
 
 func AddBook(newTitle string, newDescription string, isRead bool) {
 	newBook := &Book{
-		id:          BookId,
-		title:       newTitle,
-		description: newDescription,
-		isRead:      isRead,
+		Id:          NewBookId,
+		Title:       newTitle,
+		Description: newDescription,
+		IsRead:      isRead,
+		IsBorrowed:  false,
 	}
-	Books = append(Books, newBook)
-	BookId += 1
+	// Books = append(Books, newBook)
+	BooksByTitle[newTitle] = newBook
+	Books[NewBookId] = newBook
+	NewBookId += 1
 }
 
 // Output book slice as a string
 func (book *Book) String() string {
-	return fmt.Sprintf("ID: %d, Title: %s, Description: %s, IsRead: %v",
-		book.id, book.title, book.description, book.isRead)
+	return fmt.Sprintf("id: %d, title: %s, description: %s, isRead: %v, isBorrowed: %v",
+		book.Id, book.Title, book.Description, book.IsRead, book.IsBorrowed)
 }
 
 func ListAllBooks() {
@@ -35,23 +39,31 @@ func ListAllBooks() {
 }
 
 func FindBookById(book_id int) (*Book, error) {
-	var booksByID = make(map[int]*Book)
-	for _, book := range Books {
-		booksByID[book.id] = book
-	}
-	if book, exists := booksByID[book_id]; exists {
+	if book, found := Books[book_id]; found {
 		return book, nil
 	}
-	return nil, fmt.Errorf("Book with such id was not found")
+	return nil, fmt.Errorf("book with such id was not found")
 }
 
-func FindBookByTitle(book_title string) (*Book, error) {
-	var booksByTitle = make(map[string]*Book)
-	for _, book := range Books {
-		booksByTitle[book.title] = book
-	}
-	if book, exists := booksByTitle[book_title]; exists {
+func FindBookByTitle(title string) (*Book, error) {
+	if book, found := BooksByTitle[title]; found {
 		return book, nil
 	}
-	return nil, fmt.Errorf("Book with such title was not found")
+	return nil, fmt.Errorf("book with such title was not found")
+}
+
+func BorrowBook(book_title string) (*Book, error) {
+	book, err := FindBookByTitle(book_title)
+	if book != nil {
+		book.IsBorrowed = true
+	}
+	return book, err
+}
+
+func ReturnBook(book *Book) error {
+	if book == nil {
+		return fmt.Errorf("cannot return nonexistence to library")
+	}
+	book.IsBorrowed = false
+	return nil
 }
